@@ -3,7 +3,8 @@
   "description": [
     "The portfolio's shared Renovate policy. Ruling 33, dustinedwards/decisions-vol-16.md.",
     "Consumed by dustinedwards-info, dustinedwards-mcp and capsid-mcp, each of which carries a renovate.json that extends this file and nothing else, so the policy has ONE owner and a change here reaches every repo without three edits.",
-    "Renovate was chosen over Dependabot on grouping, the dashboard issue, and automerge rules living in the same file. NOT covered by either, and deliberately left as a quarterly human item: wrangler's compatibility_date, which is a date rather than a version."
+    "Renovate was chosen over Dependabot on grouping, the dashboard issue, and automerge rules living in the same file. NOT covered by either, and deliberately left as a quarterly human item: wrangler's compatibility_date, which is a date rather than a version.",
+    "Ruling 36, 2026-09-07: automerge ON for security fixes, the weekly minor and patch group, pins, and lockfile maintenance, gated on CI. Majors and the load-bearing six stay human-merged from the dashboard. A repo with no CI never automerges, because ignoreTests is false and Renovate refuses to automerge without a passing check."
   ],
   "extends": ["config:recommended"],
 
@@ -18,11 +19,15 @@
   "postUpdateOptions": ["npmDedupe"],
 
   "automerge": false,
+  "automergeType": "pr",
+  "platformAutomerge": true,
+  "ignoreTests": false,
 
   "lockFileMaintenance": {
     "description": "Monthly. Refreshes transitive pins that no direct dependency bump would move.",
     "enabled": true,
-    "schedule": ["before 6am on the first day of the month"]
+    "schedule": ["before 6am on the first day of the month"],
+    "automerge": true
   },
 
   "vulnerabilityAlerts": {
@@ -34,19 +39,27 @@
     "schedule": [],
     "groupName": null,
     "minimumReleaseAge": null,
-    "labels": ["dependencies", "security"]
+    "labels": ["dependencies", "security"],
+    "automerge": true
   },
 
   "packageRules": [
     {
       "description": "ONE PR A WEEK for everything routine. A pile of single-package PRs is a pile nobody reads, and patch and minor are where the low-risk volume lives.",
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "weekly minor and patch"
+      "groupName": "weekly minor and patch",
+      "automerge": true
+    },
+    {
+      "description": "pinning a range to the installed version changes no bytes",
+      "matchUpdateTypes": ["pin"],
+      "automerge": true
     },
     {
       "description": "Majors get their own diff. A breaking change read next to nine unrelated bumps is a breaking change nobody read.",
       "matchUpdateTypes": ["major"],
-      "groupName": null
+      "groupName": null,
+      "automerge": false
     },
     {
       "description": [
@@ -61,7 +74,13 @@
         "@react-router/**",
         "@cloudflare/**"
       ],
-      "groupName": null
+      "groupName": null,
+      "automerge": false
+    },
+    {
+      "description": "rehype-katex 7 peer is ^0.16 and the generated stylesheet is derived from the pinned version",
+      "matchPackageNames": ["katex"],
+      "allowedVersions": "<0.17.0"
     }
   ]
 }
