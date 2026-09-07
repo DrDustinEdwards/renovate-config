@@ -1,0 +1,67 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": [
+    "The portfolio's shared Renovate policy. Ruling 33, dustinedwards/decisions-vol-16.md.",
+    "Consumed by dustinedwards-info, dustinedwards-mcp and capsid-mcp, each of which carries a renovate.json that extends this file and nothing else, so the policy has ONE owner and a change here reaches every repo without three edits.",
+    "Renovate was chosen over Dependabot on grouping, the dashboard issue, and automerge rules living in the same file. NOT covered by either, and deliberately left as a quarterly human item: wrangler's compatibility_date, which is a date rather than a version."
+  ],
+  "extends": ["config:recommended"],
+
+  "timezone": "America/Chicago",
+  "schedule": ["before 6am on monday"],
+
+  "rangeStrategy": "pin",
+
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 3,
+  "postUpdateOptions": ["npmDedupe"],
+
+  "automerge": false,
+
+  "lockFileMaintenance": {
+    "description": "Monthly. Refreshes transitive pins that no direct dependency bump would move.",
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+
+  "vulnerabilityAlerts": {
+    "description": [
+      "Security fixes do not wait for Monday and do not ride in the weekly group.",
+      "An empty schedule is what lets one open the moment it is found: the top-level schedule above would otherwise hold it for up to a week. minimumReleaseAge is null rather than a duration for the same reason, which is Renovate's documented way of saying no waiting period at all."
+    ],
+    "enabled": true,
+    "schedule": [],
+    "groupName": null,
+    "minimumReleaseAge": null,
+    "labels": ["dependencies", "security"]
+  },
+
+  "packageRules": [
+    {
+      "description": "ONE PR A WEEK for everything routine. A pile of single-package PRs is a pile nobody reads, and patch and minor are where the low-risk volume lives.",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "weekly minor and patch"
+    },
+    {
+      "description": "Majors get their own diff. A breaking change read next to nine unrelated bumps is a breaking change nobody read.",
+      "matchUpdateTypes": ["major"],
+      "groupName": null
+    },
+    {
+      "description": [
+        "The load-bearing six, ungrouped at EVERY update type including patch.",
+        "Each one can break the site on its own and each is read differently: wrangler is the platform CLI and its compatibility surface, better-auth is the login, react-router and @react-router/* are the framework the whole app is written against, @cloudflare/* is the test and build plumbing against the real runtime, and katex is pinned to the exact version the generated stylesheet was derived from, so moving it means regenerating that CSS in the same PR."
+      ],
+      "matchPackageNames": [
+        "wrangler",
+        "better-auth",
+        "react-router",
+        "katex",
+        "@react-router/**",
+        "@cloudflare/**"
+      ],
+      "groupName": null
+    }
+  ]
+}
