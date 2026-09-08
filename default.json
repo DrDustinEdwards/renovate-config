@@ -81,6 +81,11 @@
       "description": "rehype-katex 7 peer is ^0.16 and the generated stylesheet is derived from the pinned version",
       "matchPackageNames": ["katex"],
       "allowedVersions": "<0.17.0"
+    },
+    {
+      "matchPackageNames": ["node"],
+      "enabled": false,
+      "description": "Node moves in the quarterly dependency session with compatibility_date, never by bot. check:invariants 16 requires engines.node to equal .nvmrc exactly; Renovate pinned engines to the newest Node while .nvmrc stayed on 24 (PR #19, 2026-09-07)."
     }
   ]
 }
