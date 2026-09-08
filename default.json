@@ -3,7 +3,7 @@
   "description": [
     "The portfolio's shared Renovate policy. Ruling 33, dustinedwards/decisions-vol-16.md.",
     "Consumed by dustinedwards-info, dustinedwards-mcp and capsid-mcp, each of which carries a renovate.json that extends this file and nothing else, so the policy has ONE owner and a change here reaches every repo without three edits.",
-    "Renovate was chosen over Dependabot on grouping, the dashboard issue, and automerge rules living in the same file. NOT covered by either, and deliberately left as a quarterly human item: wrangler's compatibility_date, which is a date rather than a version.",
+    "Renovate was chosen over Dependabot on grouping, the dashboard issue, and automerge rules living in the same file. NOT covered by either, and deliberately left as quarterly human items: wrangler's compatibility_date, which is a date rather than a version, and Node, which is disabled outright in the last packageRule because engines.node and .nvmrc have to move in the same hand-written commit.",
     "Ruling 36, 2026-09-07: automerge ON for security fixes, the weekly minor and patch group, pins, and lockfile maintenance, gated on CI. Majors and the load-bearing six stay human-merged from the dashboard. A repo with no CI never automerges, because ignoreTests is false and Renovate refuses to automerge without a passing check."
   ],
   "extends": ["config:recommended"],
