@@ -113,6 +113,18 @@
       "allowedVersions": "<0.17.0"
     },
     {
+      "description": [
+        "image-size arrives ALONE and is never automerged, at any update type. Ruled 2026-09-15.",
+        "The grounds are a specific episode rather than a general caution. Two high advisories against 2.0.2 (GHSA-w3rx-r6r6-pgpr and GHSA-5p2g-fcmc-qvqq, CVE-2025-71330 and CVE-2025-71329, infinite loops in the ICNS, JXL and HEIF parsers) could not be claimed by the vulnerabilityAlerts path, because NEITHER advisory database records a fixed version: GitHub carries no first_patched_version and OSV carries last_affected 2.0.2 with no fixed event. So the remediation had no target, and the fix instead fell through to the routine path, where it was bundled into the nineteen-package weekly group with automerge true and was six days from merging itself before 6am on a Monday with nobody reading it.",
+        "A security fix that arrives disguised as routine volume is the one bump that must be read, and grouping is what hides it. groupName null unbundles it; automerge false is the half that matters, because an ungrouped PR that merges itself before anyone opens it is the same outcome in a smaller diff.",
+        "There is a second, durable reason that outlives these two CVEs. The project moved off GitHub to codeberg.org mid-advisory: the GitHub repo's last push is 2026-06-03, its newest release is v2.0.2, the pull request both advisories cite now 404s and survives only in a web.archive.org snapshot, and 2.0.3 and 2.0.4 were published to npm on 2026-09-14 forty-one minutes apart with no build provenance and no GitHub tags. The publisher is the same sole maintainer account as 2.0.2, and the parser guards are present in the published bytes, both verified by hand. That is enough to take the bump deliberately and not enough to take it in a bundle at 6am.",
+        "This rule is a no-op in dustinedwards-mcp and capsid-mcp: neither depends on image-size, measured 2026-09-15. It lives here anyway, because the policy has one owner (ruling 33) and a rule that fires in one repo is not a reason to fork the file."
+      ],
+      "matchPackageNames": ["image-size"],
+      "groupName": null,
+      "automerge": false
+    },
+    {
       "matchPackageNames": ["node"],
       "enabled": false,
       "description": "Node moves in the quarterly dependency session with compatibility_date, never by bot. check:invariants 16 requires engines.node to equal .nvmrc exactly; Renovate pinned engines to the newest Node while .nvmrc stayed on 24 (PR #19, 2026-09-07)."
