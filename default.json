@@ -37,7 +37,10 @@
   "vulnerabilityAlerts": {
     "description": [
       "Security fixes do not wait for Monday and do not ride in the weekly group.",
-      "An empty schedule is what lets one open the moment it is found: the top-level schedule above would otherwise hold it for up to a week. minimumReleaseAge is null rather than a duration for the same reason, which is Renovate's documented way of saying no waiting period at all."
+      "An empty schedule is what lets one open the moment it is found: the top-level schedule above would otherwise hold it for up to a week. minimumReleaseAge is null rather than a duration for the same reason, which is Renovate's documented way of saying no waiting period at all.",
+      "THIS AUTOMERGE HAS NEVER RUN, and by ruling 36's own standard that makes it a claim nobody has watched work. Measured 2026-09-15: no security-labelled pull request has ever existed in any of the three consuming repos. Ruling 36 turned automerge on here while keeping it off elsewhere until somebody had watched CI catch something, because CI green is a claim until then; the grant on this block is the one that was never watched, and it is the only one that would merge a dependency change with no human in the loop at any hour of any day.",
+      "THE FIRST OPPORTUNITY CAME AND THE PATH COULD NOT TAKE IT, 2026-09-15, which is why this note is not simply a to-do. Two high advisories against image-size 2.0.2 record NO fixed version in either database GitHub or Renovate can read: no first_patched_version in the GitHub advisory, and last_affected 2.0.2 with no fixed event in OSV, so osvVulnerabilityAlerts would not have helped either. Renovate's remediation needs a target version and there was none, so the fix arrived on the routine path instead, and the packageRule for image-size below is what keeps that arrival readable. The path is therefore UNTESTED rather than broken: nothing above has been shown wrong, and nothing above has been shown to work.",
+      "What would test it is an advisory that carries a fixed version. Until one does, treat a security fix as something that may arrive through the weekly group wearing routine clothes."
     ],
     "enabled": true,
     "schedule": [],
