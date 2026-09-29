@@ -6,9 +6,11 @@
     "Renovate was chosen over Dependabot on grouping, the dashboard issue, and automerge rules living in the same file. NOT covered by either, and deliberately left as quarterly human items: wrangler's compatibility_date, which is a date rather than a version, and Node, which is disabled outright in the last packageRule because engines.node and .nvmrc have to move in the same hand-written commit.",
     "Ruling 36, 2026-09-07: automerge ON for security fixes, the weekly minor and patch group, pins, and lockfile maintenance, gated on CI. Majors stay human-merged from the dashboard. A repo with no CI never automerges, because ignoreTests is false and Renovate refuses to automerge without a passing check.",
     "Ruling 42, 2026-09-08: the load-bearing six stopped being one refusal and became a floor plus four grants, because 'this package is load-bearing' and 'this UPDATE is risky' are different claims and the six were being judged on the first. The framework and the Cloudflare tooling now automerge on patch and minor, better-auth and wrangler on patch alone, and katex on nothing. All of them stay ungrouped at every type, which is the half of the old rule that was always right.",
-    "Ruling pending, 2026-09-15: rebaseWhen is \"conflicted\" and prHourlyLimit is stated. Renovate was 613 of the September cycle 1,800 Actions minutes, 602 of them in dustinedwards-info, and the cause is rebasing rather than opening: single branches re-ran CI 20 to 37 times each (renovate/react-router-8.x 33 runs and 124 minutes, renovate/react-router-dev-8.x 37 runs, renovate/remark 22 runs and 76 minutes). config:recommended leaves rebaseWhen at \"auto\", which rebases every open branch each time the base moves, and each rebase costs a push run and a pull_request run. \"conflicted\" rebases only when a branch will not merge. No consuming repo has branch protection (the free plan refuses it, HTTP 403), so no required check is strict and a stale branch cannot stall automerge, which is the one condition that would make this setting cost more than it saves."
+    "Ruling pending, 2026-09-15: rebaseWhen is \"conflicted\" and prHourlyLimit is stated. Renovate was 613 of the September cycle 1,800 Actions minutes, 602 of them in dustinedwards-info, and the cause is rebasing rather than opening: single branches re-ran CI 20 to 37 times each (renovate/react-router-8.x 33 runs and 124 minutes, renovate/react-router-dev-8.x 37 runs, renovate/remark 22 runs and 76 minutes). config:recommended leaves rebaseWhen at \"auto\", which rebases every open branch each time the base moves, and each rebase costs a push run and a pull_request run. \"conflicted\" rebases only when a branch will not merge. No consuming repo has branch protection (the free plan refuses it, HTTP 403), so no required check is strict and a stale branch cannot stall automerge, which is the one condition that would make this setting cost more than it saves.",
+    "Ruling pending, 2026-09-29 (Dustin: adopt the current supply-chain best practice across the portfolio; job_93460f5c4318): extends config:best-practices, and an npm release must be three days old before Renovate raises it. Before this there was no cooldown at all while the weekly group, pins and lockfile maintenance automerged, so a compromised version could merge the Monday it was published. A 3 to 5 day wait blocks most npm supply-chain attacks (nesbitt.io, 2026-03-04: 8 of 10 examined attacks had windows under a week), and npm can unpublish a version for 72 hours. best-practices already carries the npm cooldown (security:minimumReleaseAgeNpm); the rule below restates it so the policy does not hang on an upstream default. Security fixes still bypass minimumReleaseAge, which Renovate documents and vulnerabilityAlerts states."
   ],
-  "extends": ["config:recommended"],
+  "extends": ["config:best-practices"],
+  "minimumReleaseAgeBehaviour": "timestamp-required",
 
   "timezone": "America/Chicago",
   "schedule": ["before 6am on monday"],
@@ -28,7 +30,7 @@
   "ignoreTests": false,
 
   "lockFileMaintenance": {
-    "description": "Monthly. Refreshes transitive pins that no direct dependency bump would move.",
+    "description": "Monthly. Refreshes transitive pins that no direct dependency bump would move. This schedule replaces the weekly one config:best-practices brings (:maintainLockFilesWeekly), since a file's own settings apply after the presets it extends.",
     "enabled": true,
     "schedule": ["before 6am on the first day of the month"],
     "automerge": true
@@ -51,6 +53,16 @@
   },
 
   "packageRules": [
+    {
+      "description": [
+        "THE COOLDOWN: an npm major, minor or patch release waits three days before Renovate raises it. internalChecksFilter strict means a pending release is skipped rather than raised and then downgraded, and the Dependency Dashboard lists it under Pending Status Checks.",
+        "Scoped to those three update types, not to every npm update, because a later rule wins: pin, lockFileMaintenance, replacement, bump, lockfileUpdate and rollback carry no release timestamp, security:minimumReleaseAgeNpm opts them out for that reason, and under timestamp-required a rule that matched them again would hold them forever, pins included. Lock file maintenance is left to npm's own min-release-age in each repository's .npmrc."
+      ],
+      "matchDatasources": ["npm"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "minimumReleaseAge": "3 days",
+      "internalChecksFilter": "strict"
+    },
     {
       "description": "ONE PR A WEEK for everything routine. A pile of single-package PRs is a pile nobody reads, and patch and minor are where the low-risk volume lives.",
       "matchUpdateTypes": ["minor", "patch"],
