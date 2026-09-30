@@ -56,7 +56,7 @@
     {
       "description": [
         "THE COOLDOWN: an npm major, minor or patch release waits three days before Renovate raises it. internalChecksFilter strict means a pending release is skipped rather than raised and then downgraded, and the Dependency Dashboard lists it under Pending Status Checks.",
-        "Scoped to those three update types, not to every npm update, because a later rule wins: pin, lockFileMaintenance, replacement, bump, lockfileUpdate and rollback carry no release timestamp, security:minimumReleaseAgeNpm opts them out for that reason, and under timestamp-required a rule that matched them again would hold them forever, pins included. Lock file maintenance is left to npm's own min-release-age in each repository's .npmrc."
+        "Scoped to those three update types, not to every npm update, because a later rule wins: pin, lockFileMaintenance, replacement, bump, lockfileUpdate and rollback carry no release timestamp, security:minimumReleaseAgeNpm opts them out for that reason, and under timestamp-required a rule that matched them again would hold them forever, pins included. npm's own min-release-age lives in each developer's user npmrc, not in a repository's .npmrc, because Renovate writes lockfiles with the repository's npm settings and a repo line would hold its security-fix PRs until the fix was three days old. So lock file maintenance has no cooldown from either, and its monthly automerge rests on CI."
       ],
       "matchDatasources": ["npm"],
       "matchUpdateTypes": ["major", "minor", "patch"],
