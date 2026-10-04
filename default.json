@@ -110,6 +110,11 @@
       "automerge": true
     },
     {
+      "description": "React Router's packages move as ONE update (Dustin, 2026-10-04). react-router and @react-router/* release in lockstep and pin each other as peers (@react-router/dev 8.4.0 requires react-router ^8.4.0), so the separate PRs the rule above produces can never install: npm ci fails ERESOLVE on each, measured on dustinedwards-info PR 246, failing from 2026-09-30. Grouping only this family keeps ruling 42 for everything else: the other load-bearing packages stay ungrouped. Automerge is unchanged: minor and patch on green CI, majors human-merged.",
+      "matchPackageNames": ["react-router", "@react-router/**"],
+      "groupName": "React Router"
+    },
+    {
       "description": "better-auth automerges on patch alone. Its 1.x minors carry breaking changes by the maintainers' own account, so a minor here is a major everywhere else and gets read. Security fixes ship as patches, which is the half that must not wait for a human.",
       "matchPackageNames": ["better-auth"],
       "matchUpdateTypes": ["patch"],
