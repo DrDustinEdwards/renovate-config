@@ -1,0 +1,47 @@
+name: improve-score
+
+# The caller each roster repository keeps: its own build job (differs per repository) and a second job that runs the shared scorer.
+# Replace <SHA> with the commit of renovate-config that holds the reviewed improve-score.yml, and keep it a full sha:
+# scripts/check-callers.mjs fails on anything else.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: The attempt branch to score.
+        required: true
+      run_id:
+        description: The improve run this attempt belongs to.
+        required: true
+      attempt_id:
+        description: The attempt being scored. The literal suffix -baseline measures the base.
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: build (per-repo, no secrets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      head_sha: ${{ steps.head.outputs.sha }}
+      build_passes: ${{ steps.build.outcome == 'success' && '1' || '0' }}
+    steps:
+      # The repository's own install, build, test, measure and stage steps go here and upload the artifact named
+      # `attempt` holding metrics.json, started.txt and code/. See any roster repository's current improve-score.yml.
+      - run: echo "per-repo build steps"
+
+  score:
+    name: score (shared, holds secrets)
+    needs: build
+    uses: DrDustinEdwards/renovate-config/.github/workflows/improve-score.yml@0000000000000000000000000000000000000000
+    with:
+      namespace: dustinedwards
+      run_id: ${{ inputs.run_id }}
+      attempt_id: ${{ inputs.attempt_id }}
+      head_sha: ${{ needs.build.outputs.head_sha }}
+      build_passes: ${{ needs.build.outputs.build_passes }}
+    secrets:
+      IMPROVE_SCORE_KEY: ${{ secrets.IMPROVE_SCORE_KEY }}
