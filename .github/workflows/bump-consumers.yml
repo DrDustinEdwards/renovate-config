@@ -1,0 +1,141 @@
+name: bump-consumers
+
+# THE RELEASE SIDE OF "OWN PACKAGES ARRIVE AT ONCE" (job_3b09752450c1). default.json lets a release of
+# one of Dustin's packages open its pull request with no cooldown and no schedule, but Renovate only
+# looks when it runs. This workflow makes it run, in every repository that depends on the package,
+# the moment the package is tagged.
+#
+# HOW. These repositories run the Mend-hosted Renovate app, which does not listen for
+# repository_dispatch. Its Dependency Dashboard issue ends in a checkbox,
+#   - [ ] <!-- manual job -->Check this box to trigger a request for Renovate to run again on this repository
+# and ticking it is the app's own way to start a run. So this ticks it, once per consumer.
+#
+# WHO IS A CONSUMER is computed, never listed: every non-archived repository the token can see whose
+# default branch has a package.json (any depth, node_modules aside) naming this package, either as a
+# github:/git+https: reference to DrDustinEdwards/<this repo> or, for a package that is also on npm, by
+# its npm name. A list would drift the first time someone added a dependency.
+#
+# A CALLER is the package repository, on a tag push:
+#
+#   on:
+#     push:
+#       tags: ["v*"]
+#   jobs:
+#     bump:
+#       uses: DrDustinEdwards/renovate-config/.github/workflows/bump-consumers.yml@<FULL 40-CHARACTER SHA>
+#       secrets:
+#         token: ${{ secrets.RENOVATE_TRIGGER_TOKEN }}
+#
+# THE TOKEN is a fine-grained personal access token, resource owner DrDustinEdwards, all repositories,
+# with Contents read, Issues read and write, and Metadata read. Nothing else: it reads manifests and
+# edits one checkbox. GITHUB_TOKEN cannot do it, because it reaches only the repository it runs in.
+
+on:
+  workflow_call:
+    inputs:
+      dry_run:
+        description: List the consumers and what would be ticked, and change nothing.
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      token:
+        description: The fine-grained token described in the header.
+        required: true
+
+permissions: {}
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions: {}
+    steps:
+      - name: Refuse to run without the token
+        env:
+          TOKEN: ${{ secrets.token }}
+        run: |
+          if [ -z "${TOKEN}" ]; then
+            echo "::error::secrets.token is empty. Add RENOVATE_TRIGGER_TOKEN to this repository (see the header of bump-consumers.yml in DrDustinEdwards/renovate-config)."
+            exit 1
+          fi
+
+      - name: Start a Renovate run in every consumer
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        with:
+          github-token: ${{ secrets.token }}
+          script: |
+            const owner = context.repo.owner;
+            const self = context.repo.repo;
+            const dryRun = process.env.DRY_RUN === "true";
+            const UNTICKED = "- [ ] <!-- manual job -->";
+            const TICKED = "- [x] <!-- manual job -->";
+
+            const readJson = async (repo, path, ref) => {
+              try {
+                const { data } = await github.rest.repos.getContent({ owner, repo, path, ref });
+                return JSON.parse(Buffer.from(data.content, "base64").toString("utf8"));
+              } catch {
+                return null;
+              }
+            };
+
+            const own = await readJson(self, "package.json", context.sha);
+            const npmName = own?.name ?? null;
+            const escaped = `${owner}/${self}`.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const gitRef = new RegExp(`(?:^|[:/])${escaped}(?:\\.git)?#`, "i");
+            const dependsOn = (manifest) =>
+              ["dependencies", "devDependencies", "optionalDependencies", "peerDependencies"].some((field) =>
+                Object.entries(manifest?.[field] ?? {}).some(
+                  ([name, spec]) => typeof spec === "string" && (gitRef.test(spec) || (name === npmName && !/[:/]/.test(spec))),
+                ),
+              );
+
+            const repos = await github.paginate(github.rest.repos.listForAuthenticatedUser, { affiliation: "owner", per_page: 100 });
+            const rows = [];
+            let failed = 0;
+            for (const repo of repos) {
+              if (repo.archived || repo.owner.login !== owner || repo.name === self) continue;
+              try {
+                const { data: tree } = await github.rest.git.getTree({ owner, repo: repo.name, tree_sha: repo.default_branch, recursive: "true" });
+                const manifests = tree.tree
+                  .filter((entry) => entry.type === "blob" && /(^|\/)package\.json$/.test(entry.path) && !entry.path.includes("node_modules/"))
+                  .map((entry) => entry.path);
+                const hits = [];
+                for (const path of manifests) if (dependsOn(await readJson(repo.name, path, repo.default_branch))) hits.push(path);
+                if (hits.length === 0) continue;
+
+                const issues = await github.paginate(github.rest.issues.listForRepo, { owner, repo: repo.name, state: "open", creator: "renovate[bot]", per_page: 100 });
+                const dashboard = issues.find((issue) => !issue.pull_request && issue.title === "Dependency Dashboard");
+                let outcome;
+                if (!dashboard) {
+                  outcome = "no Dependency Dashboard: Renovate is not active here (merge its onboarding PR)";
+                  core.warning(`${repo.name}: ${outcome}`);
+                } else if (dashboard.body?.includes(TICKED)) {
+                  outcome = `run already requested (#${dashboard.number})`;
+                } else if (!dashboard.body?.includes(UNTICKED)) {
+                  outcome = `dashboard #${dashboard.number} has no manual-run checkbox`;
+                  core.warning(`${repo.name}: ${outcome}`);
+                } else if (dryRun) {
+                  outcome = `would tick #${dashboard.number}`;
+                } else {
+                  await github.rest.issues.update({ owner, repo: repo.name, issue_number: dashboard.number, body: dashboard.body.replace(UNTICKED, TICKED) });
+                  outcome = `run requested (#${dashboard.number})`;
+                }
+                rows.push([repo.name, hits.join(", "), outcome]);
+              } catch (error) {
+                failed += 1;
+                rows.push([repo.name, "", `error: ${error.message}`]);
+                core.error(`${repo.name}: ${error.message}`);
+              }
+            }
+
+            await core.summary
+              .addHeading(`Consumers of ${owner}/${self}${npmName ? ` (${npmName})` : ""}${dryRun ? ", dry run" : ""}`)
+              .addTable([[{ data: "Repository", header: true }, { data: "Manifests", header: true }, { data: "Outcome", header: true }], ...rows])
+              .write();
+            for (const [name, hits, outcome] of rows) core.info(`${name} [${hits}]: ${outcome}`);
+            if (rows.length === 0) core.warning(`No repository the token can see depends on ${owner}/${self}.`);
+            if (failed > 0) core.setFailed(`${failed} consumer(s) could not be read or triggered.`);
