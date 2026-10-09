@@ -145,6 +145,43 @@
       "automerge": false
     },
     {
+      "description": [
+        "OWN PACKAGES ARRIVE AT ONCE (Dustin, 2026-10-09, standing rule; job_3b09752450c1): a release of one of Dustin's own packages opens its pull request in every consuming repository right away, not after the cooldown and not on Monday's schedule. Minor and patch merge themselves on green CI (the rule after the next); majors and digest moves open at once and wait for Dustin.",
+        "What counts as his own is decided by who can publish it, never by what a package says about itself. A github: or git+https dependency on DrDustinEdwards/* resolves to the github-tags datasource with packageName owner/repo (Renovate lib/modules/manager/npm/extract/common/dependency.ts), and only Dustin can tag a release there. On npm, only the @dustinedwards scope and the unscoped enarratio, which the npm account dustinedwards publishes. matchSourceUrls is deliberately NOT used: an npm package's repository field is whatever its publisher typed, so any stranger could claim DrDustinEdwards and skip the cooldown.",
+        "Option names are from Renovate's configuration-options docs (docs/usage/configuration-options.md, read 2026-10-09): minimumReleaseAge null is the documented 'no waiting period', and 0 days is treated the same since 42.19.5; a schedule of the cron wildcard is 'at any time'; automergeStrategy squash flattens the PR into one commit and also applies to platform-native automerge; prPriority orders PR creation, so these go first when prConcurrentLimit or prHourlyLimit is the bottleneck.",
+        "Ungrouped at every update type, so each release gets its own PR and the consumer's CI judges it alone. CI is still the gate: ignoreTests stays false, so a red run never merges. These rules sit after the cooldown, the weekly group and the load-bearing set so they win over all three; none of the load-bearing names is one of these packages.",
+        "Renovate only reacts when it runs. The release side is the bump-consumers workflow in this repository, which each package repository calls when it tags a release, to start a Renovate run in every repository that depends on it."
+      ],
+      "matchDatasources": ["github-tags"],
+      "matchPackageNames": ["DrDustinEdwards/**"],
+      "minimumReleaseAge": null,
+      "schedule": ["* * * * *"],
+      "groupName": null,
+      "prPriority": 10,
+      "automerge": false,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "The npm half of the rule above: the @dustinedwards scope and enarratio, the packages the npm account dustinedwards publishes. Same settings, same reasons.",
+      "matchDatasources": ["npm"],
+      "matchPackageNames": ["@dustinedwards/**", "enarratio"],
+      "minimumReleaseAge": null,
+      "schedule": ["* * * * *"],
+      "groupName": null,
+      "prPriority": 10,
+      "automerge": false,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "Minor and patch of Dustin's own packages merge themselves, squashed, once CI is green (Dustin, 2026-10-09). The two rules above are the floor: every update of these opens at once and never automerges, so majors and digest moves (a sha pin such as dustinedwards-info's capsomer can jump a major) wait for Dustin. This grant is the only automerge, the same floor-then-grant shape as ruling 42.",
+      "matchDatasources": ["github-tags", "npm"],
+      "matchPackageNames": ["DrDustinEdwards/**", "@dustinedwards/**", "enarratio"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
       "matchPackageNames": ["node"],
       "enabled": false,
       "description": "Node moves in the quarterly dependency session with compatibility_date, never by bot. check:invariants 16 requires engines.node to equal .nvmrc exactly; Renovate pinned engines to the newest Node while .nvmrc stayed on 24 (PR #19, 2026-09-07)."
