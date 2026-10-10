@@ -20,7 +20,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           package-manager-cache: false
-      - name: Hold the shared scorer to its isolation properties, the caller check to its pin rule, and the test helpers to their behaviour
+      - name: Hold the shared workflows to their properties, the caller check to its pin rule, and the package to its behaviour
         run: node --test "test/*.test.mjs"
-      - name: The example caller is itself pinned
-        run: node scripts/check-callers.mjs examples/improve-score-caller.yml
+      - name: The example callers are themselves pinned
+        run: node scripts/check-callers.mjs examples/improve-score-caller.yml examples/no-bloat-caller.yml

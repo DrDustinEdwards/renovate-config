@@ -1,0 +1,96 @@
+name: no-bloat
+
+# THE NO-BLOAT REPORT, WRITTEN ONCE (capsid/research/design-shared-tests.md section 3; D3 and D4 of job_bf31c124055e).
+# Knip and jscpd against the repository's own baseline, the same idea capsomer (no-bloat.yml), dustinedwards-info
+# (hygiene.yml) and capsid (a step of ci.yml) each wrote for themselves. The work is the package's bin,
+# bin/no-bloat.mjs, so a repository can run the same report locally with `npx devkit-no-bloat`; this file only checks out,
+# installs and calls it.
+#
+# NEVER A GATE. The bin exits 0 whatever it finds, every step after the checkout is continue-on-error, and so is the job:
+# a finding, a crashed tool or a failed install is a warning on the run, not a red pull request.
+#
+# THE BIN COMES FROM THE CALLER'S OWN INSTALL: the caller lists "@dustinedwards/devkit" in its devDependencies at a tag,
+# as it does for the test helpers. Per-repository extras (capsomer's page weight, dustinedwards-info's route weight) stay
+# in the caller as a job of their own beside this one.
+#
+# MINUTES. A called workflow bills the caller. Public repositories run free: call it on pull_request and on push to the
+# default branch. The four private repositories (foxhound, foxing, germomics, txasm) call it on a weekly schedule only.
+#
+# A CALLER (examples/no-bloat-caller.yml) pins a full 40-character sha; scripts/check-callers.mjs fails on anything else.
+
+on:
+  workflow_call:
+    inputs:
+      node-version-file:
+        description: The file naming the Node version, as actions/setup-node reads it.
+        required: false
+        type: string
+        default: .nvmrc
+      install:
+        description: The install command. It must install @dustinedwards/devkit.
+        required: false
+        type: string
+        default: npm ci
+      prepare:
+        description: Run after the install and before the report, for generated files the code imports. Empty for none.
+        required: false
+        type: string
+        default: ""
+      config:
+        description: The no-bloat config, with the runs and the baseline (see bin/no-bloat.mjs).
+        required: false
+        type: string
+        default: .no-bloat.json
+      timeout-minutes:
+        required: false
+        type: number
+        default: 15
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    name: No-bloat report (warn-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    # Nothing here may turn a pull request red, the install and the prepare step included.
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        continue-on-error: true
+        with:
+          node-version-file: ${{ inputs.node-version-file }}
+          cache: npm
+
+      - name: Install
+        continue-on-error: true
+        env:
+          INSTALL: ${{ inputs.install }}
+        run: bash -euo pipefail -c "$INSTALL"
+
+      - name: Prepare
+        if: inputs.prepare != ''
+        continue-on-error: true
+        env:
+          PREPARE: ${{ inputs.prepare }}
+        run: bash -euo pipefail -c "$PREPARE"
+
+      - name: Report
+        continue-on-error: true
+        env:
+          CONFIG: ${{ inputs.config }}
+        run: |
+          bin=node_modules/@dustinedwards/devkit/bin/no-bloat.mjs
+          if [ ! -f "$bin" ]; then
+            # A report that could not run says so on the run; continue-on-error alone would hide it.
+            echo "::warning::@dustinedwards/devkit is not installed, so there is no report. Add it to devDependencies at a tag (see the devkit README)."
+            exit 0
+          fi
+          node "$bin" --config "$CONFIG"

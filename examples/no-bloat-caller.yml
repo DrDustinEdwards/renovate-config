@@ -1,0 +1,28 @@
+name: no-bloat
+
+# The caller a repository keeps. Replace the sha with the commit of devkit that holds the reviewed no-bloat.yml, and keep it
+# a full sha: scripts/check-callers.mjs fails on anything else. The repository also lists "@dustinedwards/devkit" in its
+# devDependencies at a tag, and keeps its runs and baseline in .no-bloat.json (`npx devkit-no-bloat --write-baseline`).
+
+on:
+  # A public repository: every pull request and every push to the default branch.
+  pull_request:
+  push:
+    branches: [main]
+  # A private repository spends minutes: drop the two above and run weekly instead.
+  # schedule:
+  #   - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: no-bloat-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  no-bloat:
+    uses: DrDustinEdwards/devkit/.github/workflows/no-bloat.yml@0000000000000000000000000000000000000000
+    with:
+      # Generated files the code imports, if any; omit otherwise.
+      prepare: npm run build:content
