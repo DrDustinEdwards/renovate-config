@@ -13,7 +13,7 @@
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
-const SHARED = /^\s*uses:\s*(?<repo>[\w.-]+)\/renovate-config\/\.github\/workflows\/(?<file>[\w.-]+)@(?<ref>\S+)/;
+const SHARED = /^\s*uses:\s*(?<repo>[\w.-]+)\/devkit\/\.github\/workflows\/(?<file>[\w.-]+)@(?<ref>\S+)/;
 
 /**
  * @param {string} text
@@ -37,7 +37,7 @@ export function callerProblems(text) {
       problems.push({ line: index + 1, problem: "secrets: inherit hides what the shared workflow receives; pass IMPROVE_SCORE_KEY by name" });
     }
   });
-  if (calls === 0) problems.push({ line: 0, problem: "no call to a renovate-config reusable workflow" });
+  if (calls === 0) problems.push({ line: 0, problem: "no call to a devkit reusable workflow" });
   return problems;
 }
 
