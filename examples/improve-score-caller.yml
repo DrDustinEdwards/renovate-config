@@ -1,7 +1,7 @@
 name: improve-score
 
 # The caller each roster repository keeps: its own build job (differs per repository) and a second job that runs the shared scorer.
-# Replace <SHA> with the commit of renovate-config that holds the reviewed improve-score.yml, and keep it a full sha:
+# Replace <SHA> with the commit of devkit that holds the reviewed improve-score.yml, and keep it a full sha:
 # scripts/check-callers.mjs fails on anything else.
 
 on:
@@ -36,7 +36,7 @@ jobs:
   score:
     name: score (shared, holds secrets)
     needs: build
-    uses: DrDustinEdwards/renovate-config/.github/workflows/improve-score.yml@0000000000000000000000000000000000000000
+    uses: DrDustinEdwards/devkit/.github/workflows/improve-score.yml@0000000000000000000000000000000000000000
     with:
       namespace: dustinedwards
       run_id: ${{ inputs.run_id }}

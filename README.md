@@ -1,4 +1,4 @@
-# renovate-config
+# devkit
 
 Shared configuration for the Dustin Edwards repositories, public so private repositories can use it.
 

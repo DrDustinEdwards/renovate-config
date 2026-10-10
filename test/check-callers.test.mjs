@@ -6,7 +6,7 @@ import { callerProblems } from "../scripts/check-callers.mjs";
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 const call = (ref, extra = "") => `jobs:
   score:
-    uses: DrDustinEdwards/renovate-config/.github/workflows/improve-score.yml@${ref}
+    uses: DrDustinEdwards/devkit/.github/workflows/improve-score.yml@${ref}
 ${extra}`;
 
 test("a call pinned to a full commit sha is accepted", () => {
@@ -43,7 +43,7 @@ test("secrets: inherit is refused", () => {
 });
 
 test("a file that calls nothing is a problem, not a pass", () => {
-  assert.deepEqual(callerProblems("name: x\n"), [{ line: 0, problem: "no call to a renovate-config reusable workflow" }]);
+  assert.deepEqual(callerProblems("name: x\n"), [{ line: 0, problem: "no call to a devkit reusable workflow" }]);
 });
 
 test("CRLF line endings are read the same as LF", () => {

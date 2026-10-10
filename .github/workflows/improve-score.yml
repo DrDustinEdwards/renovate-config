@@ -9,7 +9,7 @@ name: improve-score
 #
 #   score:
 #     needs: build
-#     uses: DrDustinEdwards/renovate-config/.github/workflows/improve-score.yml@<FULL 40-CHARACTER SHA>
+#     uses: DrDustinEdwards/devkit/.github/workflows/improve-score.yml@<FULL 40-CHARACTER SHA>
 #     with:
 #       namespace: dustinedwards
 #       run_id: ${{ inputs.run_id }}

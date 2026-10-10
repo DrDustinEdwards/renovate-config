@@ -22,7 +22,7 @@ name: bump-consumers
 #       tags: ["v*"]
 #   jobs:
 #     bump:
-#       uses: DrDustinEdwards/renovate-config/.github/workflows/bump-consumers.yml@<FULL 40-CHARACTER SHA>
+#       uses: DrDustinEdwards/devkit/.github/workflows/bump-consumers.yml@<FULL 40-CHARACTER SHA>
 #       secrets:
 #         token: ${{ secrets.RENOVATE_TRIGGER_TOKEN }}
 #
@@ -56,7 +56,7 @@ jobs:
           TOKEN: ${{ secrets.token }}
         run: |
           if [ -z "${TOKEN}" ]; then
-            echo "::error::secrets.token is empty. Add RENOVATE_TRIGGER_TOKEN to this repository (see the header of bump-consumers.yml in DrDustinEdwards/renovate-config)."
+            echo "::error::secrets.token is empty. Add RENOVATE_TRIGGER_TOKEN to this repository (see the header of bump-consumers.yml in DrDustinEdwards/devkit)."
             exit 1
           fi
 
