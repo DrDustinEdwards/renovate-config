@@ -147,12 +147,21 @@ export function render(rows, warnings, measuredAt) {
   ].join("\n");
 }
 
+/**
+ * The npx arguments for a tool that is not installed. The package is named with --package, never as the command: run
+ * under `npx --package <devkit>`, this bin inherits npm_config_package, and a bare `npx knip@6` would then look for a
+ * command called "knip@6" in devkit.
+ */
+export function npxArgs(/** @type {string} */ name, /** @type {string} */ spec, /** @type {string[]} */ args) {
+  return ["--yes", "--package", spec, "--", name, ...args];
+}
+
 /** Runs a tool from the repository's node_modules/.bin when it is installed there, through npx at `spec` otherwise. */
 export function runnerIn(/** @type {string} */ root, /** @type {{ knip: string, jscpd: string }} */ tools) {
   /** @type {Runner} */
   return (name, args) => {
     const local = join(root, "node_modules", ".bin", process.platform === "win32" ? `${name}.cmd` : name);
-    const [file, argv] = existsSync(local) ? [local, args] : ["npx", ["--yes", tools[name], ...args]];
+    const [file, argv] = existsSync(local) ? [local, args] : ["npx", npxArgs(name, tools[name], args)];
     // A .cmd shim (and npx itself) on Windows needs cmd.exe; elsewhere the bin runs directly.
     const [cmd, all] = process.platform === "win32" ? ["cmd.exe", ["/c", file, ...argv]] : [file, argv];
     const r = spawnSync(cmd, all, { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });

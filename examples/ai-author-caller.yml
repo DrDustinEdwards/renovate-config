@@ -1,0 +1,18 @@
+name: ai-author
+
+# The caller a repository keeps. Replace the sha with the commit of devkit that holds the reviewed ai-author.yml, and keep it
+# a full sha: scripts/check-callers.mjs fails on anything else. The repository also lists "@dustinedwards/devkit" in its
+# devDependencies at a tag; the check runs the bin from that tag.
+
+on:
+  # Every repository, private ones included: the check takes seconds.
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ai-author:
+    uses: DrDustinEdwards/devkit/.github/workflows/ai-author.yml@0000000000000000000000000000000000000000

@@ -10,7 +10,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { compare, knipCounts, measure, render } from "../bin/no-bloat.mjs";
+import { compare, knipCounts, measure, npxArgs, render } from "../bin/no-bloat.mjs";
 
 const BIN = fileURLToPath(new URL("../bin/no-bloat.mjs", import.meta.url));
 
@@ -30,6 +30,10 @@ const fakeRun = ({ knip = KNIP, clones = 4, percentage = 1.234 } = {}) => {
   };
   return { run, calls };
 };
+
+test("a tool that is not installed is named to npx with --package, so an inherited npm_config_package cannot replace it", () => {
+  assert.deepEqual(npxArgs("knip", "knip@6", ["--no-progress"]), ["--yes", "--package", "knip@6", "--", "knip", "--no-progress"]);
+});
 
 test("knipCounts reads the compact report's headings", () => {
   assert.deepEqual(knipCounts(KNIP), { "Unused files": 2, "Unused exports": 3 });
