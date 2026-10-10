@@ -7,8 +7,22 @@ Shared configuration for the Dustin Edwards repositories, public so private repo
 - `.github/workflows/bump-consumers.yml`: the release side of the own-packages rule in `default.json`. A package repository calls it on a tag push, and it starts a Renovate run in every repository whose `package.json` depends on that package, by ticking the manual-run box on that repository's Dependency Dashboard. Consumers are found from the manifests each time, never listed. It needs the `RENOVATE_TRIGGER_TOKEN` secret described in its header.
 - `scripts/check-callers.mjs`: the check a caller runs on its own workflow files. Every call to this repository's workflows must pin a full 40-character commit sha, and `secrets: inherit` is refused.
 - `examples/improve-score-caller.yml`: the shape of a caller. The per-repository `build` job stays in the caller; only `score` is shared.
-- `test/`: runs the bump-consumers script against a stub of the GitHub API, and holds the shared scorer to its isolation properties (no network and read-only mounts for attempt code, the signing key in exactly two steps and never in the container, every action pinned, the attempt branch never checked out) and the check to its pin rule. CI runs them.
+- `testing/`: the shared test helpers, the one part of this repository that is a package (`@dustinedwards/devkit`). See below.
+- `test/`: runs the bump-consumers script against a stub of the GitHub API, and holds the shared scorer to its isolation properties (no network and read-only mounts for attempt code, the signing key in exactly two steps and never in the container, every action pinned, the attempt branch never checked out) and the check to its pin rule, and the test helpers to the behaviour their consumers rely on. CI runs them.
 
 ## Changing the shared scorer
 
 Only by a reviewed pull request here, and a change reaches a caller only when that caller's default branch takes a reviewed change to the sha on its `uses:` line. That is the point: an improve attempt can edit its own repository, never what measures it. Do not edit a caller's `uses:` line to a branch or a tag; `check-callers.mjs` fails on it.
+
+## The shared test helpers
+
+Test code that more than one repository needs, written once here so the copies stop drifting (`capsid/research/design-shared-tests.md`, D1 and D2 of job_bf31c124055e). Installed by tag, like site-api:
+
+    "@dustinedwards/devkit": "github:DrDustinEdwards/devkit#v0.1.0"
+
+Only `testing/` and this README are in the package. No dependencies and no test framework: they run in node and in workerd.
+
+- `@dustinedwards/devkit/github`: `stubGitHub({ owner, repo, branch, files })`, a fake of the GitHub contents and Git Data API at the outbound fetch. An unknown host or route throws, blob shas are real, a tree applies only when the ref moves, `failNext` plants 500s and `history` plants the commit listing. `install: false` hands back the fake as `fetch` instead of installing it globally. `gitBlobSha` and `versionOf` come with it.
+- `@dustinedwards/devkit/network`: `refuseNetwork({ hint })`, the global fetch that throws naming the URL, and `installFetch`, the swap under it and under the GitHub fake. Each returns its restore.
+
+An entry point is added when a repository adopts it, so each one ships with a consumer: `/d1` (`resetDb` from `sqlite_master`) with carrel, `/access` with capsid. A release is a tag; a consumer moves to it in its own pull request.
