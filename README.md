@@ -18,11 +18,13 @@ Only by a reviewed pull request here, and a change reaches a caller only when th
 
 Test code that more than one repository needs, written once here so the copies stop drifting (`capsid/research/design-shared-tests.md`, D1 and D2 of job_bf31c124055e). Installed by tag, like site-api:
 
-    "@dustinedwards/devkit": "github:DrDustinEdwards/devkit#v0.1.0"
+    "@dustinedwards/devkit": "github:DrDustinEdwards/devkit#v0.2.0"
 
 Only `testing/` and this README are in the package. No dependencies and no test framework: they run in node and in workerd.
 
 - `@dustinedwards/devkit/github`: `stubGitHub({ owner, repo, branch, files })`, a fake of the GitHub contents and Git Data API at the outbound fetch. An unknown host or route throws, blob shas are real, a tree applies only when the ref moves, `failNext` plants 500s and `history` plants the commit listing. `install: false` hands back the fake as `fetch` instead of installing it globally. `gitBlobSha` and `versionOf` come with it.
 - `@dustinedwards/devkit/network`: `refuseNetwork({ hint })`, the global fetch that throws naming the URL, and `installFetch`, the swap under it and under the GitHub fake. Each returns its restore.
 
-An entry point is added when a repository adopts it, so each one ships with a consumer: `/d1` (`resetDb` from `sqlite_master`) with carrel, `/access` with capsid. A release is a tag; a consumer moves to it in its own pull request.
+- `@dustinedwards/devkit/d1`: `resetDb(db, { keep })`, which empties every table `sqlite_master` lists in one batch, so a table a migration adds is cleared without anyone adding it to a list. A full-text table is cleared through itself and its shadow tables are left to it; foreign keys are checked at commit, so table order does not matter; `d1_migrations`, SQLite's and D1's own tables are never touched. It returns the tables it cleared.
+
+An entry point is added when a repository adopts it, so each one ships with a consumer: `/access` comes with capsid. `/clock` waits until a repository needs it. A release is a tag; a consumer moves to it in its own pull request.

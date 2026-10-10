@@ -1,6 +1,6 @@
 {
   "name": "@dustinedwards/devkit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Shared tooling for the Dustin Edwards repositories. As a package: the shared test helpers, installed by git tag. The Renovate policy and the reusable workflows in this repository are not part of the package.",
   "type": "module",
@@ -12,6 +12,10 @@
     "./network": {
       "types": "./testing/network.d.mts",
       "default": "./testing/network.mjs"
+    },
+    "./d1": {
+      "types": "./testing/d1.d.mts",
+      "default": "./testing/d1.mjs"
     }
   },
   "files": [
