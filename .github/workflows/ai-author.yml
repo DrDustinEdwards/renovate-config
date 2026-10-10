@@ -1,0 +1,65 @@
+name: ai-author
+
+# NO AI TRAILER AND NO AI AUTHOR ON NEW COMMITS, written once (capsid/research/design-shared-tests.md section 3; D3 and D4 of
+# job_bf31c124055e). Capsid's ci.yml ran it as a step of its own and no other repository had it, so sharing it adds
+# coverage rather than removing a copy. The work is the package's bin, bin/check-trailers.mjs; this file checks out the
+# history and calls it.
+#
+# A GATE. Unlike no-bloat, it fails the run: a commit this push or pull request adds that carries Co-Authored-By naming
+# Claude, "Generated with Claude Code", a Claude-Session link or any other trailer naming Claude, and on a pull request a
+# commit authored or committed as Claude. Older commits are not checked. A schedule or dispatch run adds no commits and
+# checks nothing. A check that could not run is a failure, not a pass.
+#
+# THE BIN COMES FROM THE DEVKIT TAG THE CALLER ALREADY PINS in its package.json, installed alone through npx: no install of
+# the caller's own dependencies, so the job takes seconds. A caller without the package fails, saying so.
+#
+# MINUTES. A called workflow bills the caller, and the full history (fetch-depth 0) is the slowest part. Public
+# repositories run free. The four private repositories run it per push too: it is the cheap check.
+#
+# A CALLER (examples/ai-author-caller.yml) pins a full 40-character sha; scripts/check-callers.mjs fails on anything else.
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: The Node major to run the check on.
+        required: false
+        type: string
+        default: "24"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: No AI trailer or author on new commits
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      # Full history, so the check can read every commit in the range a push or pull request adds.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: ${{ inputs.node-version }}
+          package-manager-cache: false
+
+      - name: Check the commits this event adds
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: |
+          spec=$(node -e 'const p = JSON.parse(require("fs").readFileSync("package.json", "utf8")); const n = "@dustinedwards/devkit"; process.stdout.write(p.devDependencies?.[n] ?? p.dependencies?.[n] ?? "")' 2>/dev/null || true)
+          if [ -z "$spec" ]; then
+            echo "::error::package.json does not list @dustinedwards/devkit, so the trailer check cannot run. Add it to devDependencies at a tag (see the devkit README)."
+            exit 2
+          fi
+          npx --yes --package "$spec" devkit-check-trailers

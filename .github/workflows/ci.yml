@@ -13,8 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # Full history, so the trailer check below can read every commit this event adds.
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
+          fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
         with:
@@ -23,4 +25,13 @@ jobs:
       - name: Hold the shared workflows to their properties, the caller check to its pin rule, and the package to its behaviour
         run: node --test "test/*.test.mjs"
       - name: The example callers are themselves pinned
-        run: node scripts/check-callers.mjs examples/improve-score-caller.yml examples/no-bloat-caller.yml
+        run: node scripts/check-callers.mjs examples/improve-score-caller.yml examples/no-bloat-caller.yml examples/ai-author-caller.yml
+      # This repository's own commits, through the bin it ships, as a caller of ai-author.yml would run it.
+      - name: No AI trailer or author on new commits
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          PUSH_AFTER: ${{ github.sha }}
+        run: node bin/check-trailers.mjs
